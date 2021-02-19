@@ -21,7 +21,10 @@ class State {
         State* downChild;
         State* leftChild;
         State* rightChild;
-        State(vector<vector <int> > &gState): gridState(gState){upChild = 0; downChild = 0; leftChild = 0; rightChild = 0;};
+        int f_n;
+        int g_n;
+        int h_n;
+        State(vector<vector <int> > &gState): gridState(gState){upChild = 0; downChild = 0; leftChild = 0; rightChild = 0; f_n = 0; g_n = 0; h_n = 0;};
 
         vector< vector<int> > getGrid() { return this->gridState; }
         

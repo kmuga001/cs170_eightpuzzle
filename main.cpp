@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include <queue> 
 #include "state.h"
 using namespace std;
@@ -10,10 +11,14 @@ State* moveUp_State(State* stateNode);
 State* moveDown_State(State* stateNode);
 State* moveLeft_State(State* stateNode);
 State* moveRight_State(State* stateNode);
-vector<int> getZeroPosition(vector <vector<int> > state);
-bool meetGoalState(State* stateNode);
-State* general_search(State* initialState); //for uniform cost search atm
+vector<int> getNumPosition(vector <vector<int> > state, int num);
+bool meetGoalState(State* stateNode, vector <vector<int> > goalGrid);
+State* general_search(State* initialState, vector <vector<int> > goalGrid); //for uniform cost search atm
+State* missingTile_search(State* initialState, vector <vector<int> > goalGrid);
+State* manhattan_search(State* initialState, vector <vector<int> > goalGrid);
 queue<State*> queueChildren(State* currentNode, queue<State*> nodes_queue);
+int manhattan_h(State* stateNode, vector <vector<int> > goalGrid);
+int misplaceTile_h(State* stateNode, vector <vector<int> > goalGrid);
 
 
 int main() {
@@ -27,6 +32,22 @@ int main() {
     vector<int> row_1;
     vector<int> row_2;
     vector<int> row_3; 
+    vector <vector<int> > goalGrid;
+    vector<int> row_1;
+    vector<int> row_2;
+    vector<int> row_3; 
+    row_1.push_back(1);
+    row_1.push_back(2);
+    row_1.push_back(3);
+    row_2.push_back(4);
+    row_2.push_back(5);
+    row_2.push_back(6);
+    row_3.push_back(7);
+    row_3.push_back(8);
+    row_3.push_back(0);
+    goalGrid.push_back(row_1);
+    goalGrid.push_back(row_2);
+    goalGrid.push_back(row_3);
     cout << "Welcome to the 8-Puzzle Solver: " << endl;
     //cout << "Type 1 to use a default puzzle, or 2 to enter your own puzzle" << endl;
     
@@ -54,7 +75,7 @@ int main() {
     //cout << initState->getGrid() << endl;
     vector< vector<int> > temp = initState->getGrid();
 
-    State* solutionNode = general_search(initState);
+    State* solutionNode = general_search(initState, goalGrid);
     if(solutionNode->getGrid().size() < 3){
         cout << "FAILURE - NO SOLUTION" << endl;
     } else {
@@ -99,7 +120,7 @@ void displayGridState(vector <vector<int> > state) {
 
 //uniform cost search for now --> because cost for each operation is the same, this is a BFS
 //using a queue structure bc we just want a fifo method to check root node first
-State* general_search(State* initialState) {
+State* general_search(State* initialState, vector <vector<int> > goalGrid) {
     //following project guideline pseudocode
     queue <State*> nodes_queue;
     nodes_queue.push(initialState); //add initial state of puzzle
@@ -112,7 +133,7 @@ State* general_search(State* initialState) {
         State* currentNode = nodes_queue.front();
         displayGridState(currentNode->getGrid());
 
-        if(meetGoalState(currentNode) == true) { //check if currentnode is the answer
+        if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
             return currentNode;
         } else {
             //nodes_queue = queuefunction(get its children by moving & put it in queue)
@@ -168,48 +189,53 @@ queue<State*> queueChildren(State* currentNode, queue<State*> nodes_queue){
 
 }
 
-
-bool meetGoalState(State* stateNode) {
-    //first create a goal grid to compare stateNode to it
-    vector< vector<int> > stateGrid = stateNode->getGrid();
-
-    vector <vector<int> > goalGrid;
-    vector<int> row_1;
-    vector<int> row_2;
-    vector<int> row_3; 
-    row_1.push_back(1);
-    row_1.push_back(2);
-    row_1.push_back(3);
-    row_2.push_back(4);
-    row_2.push_back(5);
-    row_2.push_back(6);
-    row_3.push_back(7);
-    row_3.push_back(8);
-    row_3.push_back(0);
-    goalGrid.push_back(row_1);
-    goalGrid.push_back(row_2);
-    goalGrid.push_back(row_3);
-
+//calculate h(n) for A* manhattan: formula: abs(r1-r2) + abs(c1-c2) R2,C2 = goalGrid
+int manhattan_h(State* stateNode, vector <vector<int> > goalGrid) {
+    int counter = 0;
+    int sum = 0;
+    vector<int> goalPos;
+    vector <vector<int> > stateGrid = stateNode->getGrid();
     for(int i = 0; i < goalGrid.size(); i++){
         for(int j = 0; j < goalGrid[i].size(); j++){
-            if(stateGrid[i][j] != goalGrid[i][j]){
-                return false;
+            sum = 0;
+            //need to find value's position in goal
+            if(stateGrid[i][j] == goalGrid[i][j]){
+                //num is in the right spot, no cost here
+                continue;
+            } else {
+                goalPos = getNumPosition(goalGrid, stateGrid[i][j]);
+                sum = abs(i - goalPos[0]) + abs(j - goalPos[1]);
+                counter += sum;
             }
         }
     }
 
-    return true;
+    return counter;
+}
 
+//calculate h(n) for A* misplaced Tile
+int misplaceTile_h(State* stateNode, vector <vector<int> > goalGrid) {
+    int counter = 0;
+    vector <vector<int> > stateGrid = stateNode->getGrid();
+    for(int i = 0; i < goalGrid.size(); i++){
+        for(int j = 0; j < goalGrid[i].size(); j++){
+            if(stateGrid[i][j] != goalGrid[i][j]){ //misplaced tile
+                counter += 1;
+            }
+        }
+    }
 
+    return counter;
 }
 
 
 
-vector<int> getZeroPosition(vector <vector<int> > state) {
+
+vector<int> getNumPosition(vector <vector<int> > state, int num) {
     vector<int> ind;
     for(int i = 0; i < state.size(); i++){
         for(int j = 0; j < state[i].size(); ++j){
-            if(state[i][j] == 0){
+            if(state[i][j] == num){
                 ind.push_back(i);
                 ind.push_back(j);
                 
@@ -224,7 +250,7 @@ vector<int> getZeroPosition(vector <vector<int> > state) {
 }
 
 State* moveUp_State(State* stateNode) {
-    vector<int> ind = getZeroPosition(stateNode->getGrid());
+    vector<int> ind = getNumPosition(stateNode->getGrid(), 0);
     
     //cout << ind[0] << ", " << ind[1] << endl;
     if(ind[0] == 10 && ind[1] == 10) {
@@ -257,7 +283,7 @@ State* moveUp_State(State* stateNode) {
 
 
 State* moveDown_State(State* stateNode) {
-    vector<int> ind = getZeroPosition(stateNode->getGrid());
+    vector<int> ind = getNumPosition(stateNode->getGrid(), 0);
     
     //cout << ind[0] << ", " << ind[1] << endl;
     if(ind[0] == 10 && ind[1] == 10) {
@@ -288,7 +314,7 @@ State* moveDown_State(State* stateNode) {
 }
 
 State* moveLeft_State(State* stateNode) {
-    vector<int> ind = getZeroPosition(stateNode->getGrid());
+    vector<int> ind = getNumPosition(stateNode->getGrid(), 0);
     
     //cout << ind[0] << ", " << ind[1] << endl;
     if(ind[0] == 10 && ind[1] == 10) {
@@ -319,7 +345,7 @@ State* moveLeft_State(State* stateNode) {
 }
 
 State* moveRight_State(State* stateNode) {
-    vector<int> ind = getZeroPosition(stateNode->getGrid());
+    vector<int> ind = getNumPosition(stateNode->getGrid(), 0);
     
     //cout << ind[0] << ", " << ind[1] << endl;
     if(ind[0] == 10 && ind[1] == 10) {
@@ -347,4 +373,21 @@ State* moveRight_State(State* stateNode) {
     }
 
     return stateNode;
+}
+
+bool meetGoalState(State* stateNode, vector <vector<int> > goalGrid) {
+    //first create a goal grid to compare stateNode to it
+    vector< vector<int> > stateGrid = stateNode->getGrid();
+
+    for(int i = 0; i < goalGrid.size(); i++){
+        for(int j = 0; j < goalGrid[i].size(); j++){
+            if(stateGrid[i][j] != goalGrid[i][j]){
+                return false;
+            }
+        }
+    }
+
+    return true;
+
+
 }
