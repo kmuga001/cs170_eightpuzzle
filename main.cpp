@@ -19,10 +19,8 @@ State* manhattan_search(State* initialState, vector <vector<int> > goalGrid); //
 queue<State*> queueChildren(State* currentNode, queue<State*> nodes_queue);
 int manhattan_h(State* stateNode, vector <vector<int> > goalGrid);
 int misplaceTile_h(State* stateNode, vector <vector<int> > goalGrid);
-//priority_queue<State*> missingTileQueue(State* currentNode, priority_queue<State*> nodes_queue, vector <vector<int> > goalGrid);
-//priority_queue<State*, vector<State*>, myComparator> tempFunction(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid);
-//priority_queue<State*, vector<State*>, myComparator> missingTileQueue(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid);
 queue<State*> missingTileQueue(State* currentNode, queue<State*> nodes_queue, vector <vector<int> > goalGrid);
+queue<State*> manhattanTileQueue(State* currentNode, queue<State*> nodes_queue, vector <vector<int> > goalGrid);
 /*
 bool operator<(const State& s1, const State& s2){
     cout << "HI OPERATOR" << endl;
@@ -98,7 +96,8 @@ int main() {
     //State* solutionNode = general_search(initState, goalGrid);
     //initState->h_n = misplaceTile_h(initState, goalGrid);
     //cout << "GENERAL H: " << initState->h_n << endl;
-    State* solutionNode = missingTile_search(initState, goalGrid);
+    //State* solutionNode = missingTile_search(initState, goalGrid);
+    State* solutionNode = manhattan_search(initState, goalGrid);
     if(solutionNode->getGrid().size() < 3){
         cout << "FAILURE - NO SOLUTION" << endl;
     } else {
@@ -207,63 +206,124 @@ State* missingTile_search(State* initialState, vector <vector<int> > goalGrid) {
 }
 
 
+State* manhattan_search(State* initialState, vector <vector<int> > goalGrid) {
+    queue <State*> nodes_queue;
+    //priority_queue<State*> nodes_queue;
+    //priority_queue<State*, vector<State*>, myComparator> nodes_queue;
+    nodes_queue.push(initialState); //add initial state of puzzle
+    
+    do{
+        if(nodes_queue.empty()){ //failure because queue is empty, no solution found
+            string str = "failure";
+            break; //leave the do while loop
+        }
+        State* currentNode = nodes_queue.front(); //top is for priority queue
+        displayGridState(currentNode->getGrid());
+        cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
+        if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
+            return currentNode;
+        } else {
+            nodes_queue = manhattanTileQueue(currentNode, nodes_queue, goalGrid);
 
-/*
-priority_queue<State*, vector<State*>, myComparator> tempFunction(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid){
+            nodes_queue.pop();
+        }
+
+
+    } while(!nodes_queue.empty());
+
+
+    vector <vector<int> > failedGrid;
+    vector<int> failV;
+    failV.push_back(0); //then, in main function, i can check the vector size and see that it failed - no solution
+    State* failedState = new State(failedGrid);
+    
+    return failedState;
+}
+
+
+queue<State*> manhattanTileQueue(State* currentNode, queue<State*> nodes_queue, vector <vector<int> > goalGrid) {
     currentNode = moveUp_State(currentNode);
     currentNode = moveDown_State(currentNode);
     currentNode = moveLeft_State(currentNode);
     currentNode = moveRight_State(currentNode);
 
+    vector<State*> sortTemp;
+
     //calculate f_n before pushing each child state in queue
     //f_n = g_n + h_n --> need to incremement g_n by one, h_n get from helper function
+    //cout << "CURRENT GN OKAY: " << currentNode->g_n << endl;
     if(currentNode->upChild != 0){
+        
         currentNode->upChild->g_n = 1 + currentNode->g_n; //update g(n)
-        currentNode->upChild->h_n = misplaceTile_h(currentNode->upChild, goalGrid);
+        currentNode->upChild->h_n = manhattan_h(currentNode->upChild, goalGrid);
+        //currentNode->upChild->f_n = currentNode->upChild->h_n;
         currentNode->upChild->f_n = currentNode->upChild->g_n + currentNode->upChild->h_n;
 
-        nodes_queue.push(currentNode->upChild);
+        sortTemp.push_back(currentNode->upChild);
     }
 
     
     if(currentNode->downChild != 0){
+        
         currentNode->downChild->g_n = 1 + currentNode->g_n; //update g(n)
-        currentNode->downChild->h_n = misplaceTile_h(currentNode->downChild, goalGrid);
+        currentNode->downChild->h_n = manhattan_h(currentNode->downChild, goalGrid);
+        //currentNode->downChild->f_n = currentNode->downChild->h_n;
         currentNode->downChild->f_n = currentNode->downChild->g_n + currentNode->downChild->h_n;
+        //nodes_queue.push(currentNode->downChild);
 
-        nodes_queue.push(currentNode->downChild);
+        sortTemp.push_back(currentNode->downChild);
     }
 
     
     if(currentNode->leftChild != 0){
+        
         currentNode->leftChild->g_n = 1 + currentNode->g_n; //update g(n)
-        currentNode->leftChild->h_n = misplaceTile_h(currentNode->leftChild, goalGrid);
+        currentNode->leftChild->h_n = manhattan_h(currentNode->leftChild, goalGrid);
+        //currentNode->leftChild->f_n = currentNode->leftChild->h_n;
         currentNode->leftChild->f_n = currentNode->leftChild->g_n + currentNode->leftChild->h_n;
 
-        nodes_queue.push(currentNode->leftChild);
+        //nodes_queue.push(currentNode->leftChild);
+
+        sortTemp.push_back(currentNode->leftChild);
     }
 
     
     if(currentNode->rightChild != 0){
+        
         currentNode->rightChild->g_n = 1 + currentNode->g_n; //update g(n)
-        currentNode->rightChild->h_n = misplaceTile_h(currentNode->rightChild, goalGrid);
+        currentNode->rightChild->h_n = manhattan_h(currentNode->rightChild, goalGrid);
+        //currentNode->rightChild->f_n = currentNode->rightChild->h_n;
         currentNode->rightChild->f_n = currentNode->rightChild->g_n + currentNode->rightChild->h_n;
 
-        nodes_queue.push(currentNode->rightChild);
+        //nodes_queue.push(currentNode->rightChild);
+
+        sortTemp.push_back(currentNode->rightChild);
     }
 
+    //insertion sort the vector and then add each item to queue after
+    int index = 0;
+    for(int i = 0; i < sortTemp.size(); i++){
+        index = i;
+        while((index > 0) && ((sortTemp[index])->f_n < (sortTemp[index-1])->f_n)){
+            State* temp = sortTemp[index];
+            sortTemp[index] = sortTemp[index-1];
+            sortTemp[index-1] = temp;
+            index--;
+        }
+    }
+
+    //push order of children onto nodes_queue
+    cout << "SORT ORDER: " << endl;
+    for(int i = 0; i < sortTemp.size(); i++){
+        nodes_queue.push(sortTemp[i]);
+        cout << sortTemp[i]->f_n << endl;
+    }
+
+
+
     return nodes_queue;
+    
 }
-*/
-
-
-
-
-
-
-
-
-
 
 
 
