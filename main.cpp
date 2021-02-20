@@ -14,11 +14,29 @@ State* moveRight_State(State* stateNode);
 vector<int> getNumPosition(vector <vector<int> > state, int num);
 bool meetGoalState(State* stateNode, vector <vector<int> > goalGrid);
 State* general_search(State* initialState, vector <vector<int> > goalGrid); //for uniform cost search atm
-State* missingTile_search(State* initialState, vector <vector<int> > goalGrid);
-State* manhattan_search(State* initialState, vector <vector<int> > goalGrid);
+State* missingTile_search(State* initialState, vector <vector<int> > goalGrid); //missing tile search
+State* manhattan_search(State* initialState, vector <vector<int> > goalGrid); //manhattan search
 queue<State*> queueChildren(State* currentNode, queue<State*> nodes_queue);
 int manhattan_h(State* stateNode, vector <vector<int> > goalGrid);
 int misplaceTile_h(State* stateNode, vector <vector<int> > goalGrid);
+//priority_queue<State*> missingTileQueue(State* currentNode, priority_queue<State*> nodes_queue, vector <vector<int> > goalGrid);
+//priority_queue<State*, vector<State*>, myComparator> tempFunction(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid);
+priority_queue<State*, vector<State*>, myComparator> missingTileQueue(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid);
+
+/*
+bool operator<(const State& s1, const State& s2){
+    cout << "HI OPERATOR" << endl;
+    return s1.f_n > s2.f_n;
+}*/
+
+
+class myComparator {
+    public:
+        bool operator() ( State* s1, State* s2) {
+            return s1->f_n > s2->f_n;
+        }
+
+};
 
 
 int main() {
@@ -29,25 +47,27 @@ int main() {
     Fourth - Create an object (Node - Status) (need to create a struct - h file)
     */
     vector< vector<int> > initial_state;
-    vector<int> row_1;
+    vector<int> row_1; //for initial
     vector<int> row_2;
-    vector<int> row_3; 
+    vector<int> row_3;
+
+
     vector <vector<int> > goalGrid;
-    vector<int> row_1;
-    vector<int> row_2;
-    vector<int> row_3; 
-    row_1.push_back(1);
-    row_1.push_back(2);
-    row_1.push_back(3);
-    row_2.push_back(4);
-    row_2.push_back(5);
-    row_2.push_back(6);
-    row_3.push_back(7);
-    row_3.push_back(8);
-    row_3.push_back(0);
-    goalGrid.push_back(row_1);
-    goalGrid.push_back(row_2);
-    goalGrid.push_back(row_3);
+    vector<int> grow_1; //for goal
+    vector<int> grow_2;
+    vector<int> grow_3; 
+    grow_1.push_back(1);
+    grow_1.push_back(2);
+    grow_1.push_back(3);
+    grow_2.push_back(4);
+    grow_2.push_back(5);
+    grow_2.push_back(6);
+    grow_3.push_back(7);
+    grow_3.push_back(8);
+    grow_3.push_back(0);
+    goalGrid.push_back(grow_1);
+    goalGrid.push_back(grow_2);
+    goalGrid.push_back(grow_3);
     cout << "Welcome to the 8-Puzzle Solver: " << endl;
     //cout << "Type 1 to use a default puzzle, or 2 to enter your own puzzle" << endl;
     
@@ -75,25 +95,17 @@ int main() {
     //cout << initState->getGrid() << endl;
     vector< vector<int> > temp = initState->getGrid();
 
-    State* solutionNode = general_search(initState, goalGrid);
+    //State* solutionNode = general_search(initState, goalGrid);
+    //initState->h_n = misplaceTile_h(initState, goalGrid);
+    //cout << "GENERAL H: " << initState->h_n << endl;
+    State* solutionNode = missingTile_search(initState, goalGrid);
     if(solutionNode->getGrid().size() < 3){
         cout << "FAILURE - NO SOLUTION" << endl;
     } else {
         cout << "YAY - FOUND SOLUTION: " << endl;
         displayGridState(solutionNode->getGrid());
+        cout << "Final g_n: " << solutionNode->g_n << endl;
     }
-
-
-    
-
-    /*checking if player can move
-    State* check = moveRight_State(initState);
-    cout << endl << endl;
-    if(check->rightChild == 0) {
-        cout << "no child, so no grid" << endl;
-    } else {
-        displayGridState((check->rightChild)->getGrid());
-    }*/
     
 
     return 0;
@@ -154,6 +166,171 @@ State* general_search(State* initialState, vector <vector<int> > goalGrid) {
 }
 
 
+
+
+//general search, but queueing function --> missing tile A*
+State* missingTile_search(State* initialState, vector <vector<int> > goalGrid) {
+    //queue <State*> nodes_queue;
+    //priority_queue<State*> nodes_queue;
+    priority_queue<State*, vector<State*>, myComparator> nodes_queue;
+    nodes_queue.push(initialState); //add initial state of puzzle
+    
+    do{
+        if(nodes_queue.empty()){ //failure because queue is empty, no solution found
+            string str = "failure";
+            break; //leave the do while loop
+        }
+        State* currentNode = nodes_queue.top(); //top is for priority queue
+        displayGridState(currentNode->getGrid());
+        cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
+        if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
+            return currentNode;
+        } else {
+            //nodes_queue = queuefunction(get its children by moving & put it in queue)
+            //nodes_queue = missingTileQueue(currentNode, nodes_queue, goalGrid);
+            //nodes_queue = tempFunction(currentNode, nodes_queue, goalGrid);
+            nodes_queue = missingTileQueue(currentNode, nodes_queue, goalGrid);
+
+            nodes_queue.pop();
+        }
+
+
+    } while(!nodes_queue.empty());
+
+
+    vector <vector<int> > failedGrid;
+    vector<int> failV;
+    failV.push_back(0); //then, in main function, i can check the vector size and see that it failed - no solution
+    State* failedState = new State(failedGrid);
+    
+    return failedState;
+}
+
+
+
+/*
+priority_queue<State*, vector<State*>, myComparator> tempFunction(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid){
+    currentNode = moveUp_State(currentNode);
+    currentNode = moveDown_State(currentNode);
+    currentNode = moveLeft_State(currentNode);
+    currentNode = moveRight_State(currentNode);
+
+    //calculate f_n before pushing each child state in queue
+    //f_n = g_n + h_n --> need to incremement g_n by one, h_n get from helper function
+    if(currentNode->upChild != 0){
+        currentNode->upChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->upChild->h_n = misplaceTile_h(currentNode->upChild, goalGrid);
+        currentNode->upChild->f_n = currentNode->upChild->g_n + currentNode->upChild->h_n;
+
+        nodes_queue.push(currentNode->upChild);
+    }
+
+    
+    if(currentNode->downChild != 0){
+        currentNode->downChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->downChild->h_n = misplaceTile_h(currentNode->downChild, goalGrid);
+        currentNode->downChild->f_n = currentNode->downChild->g_n + currentNode->downChild->h_n;
+
+        nodes_queue.push(currentNode->downChild);
+    }
+
+    
+    if(currentNode->leftChild != 0){
+        currentNode->leftChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->leftChild->h_n = misplaceTile_h(currentNode->leftChild, goalGrid);
+        currentNode->leftChild->f_n = currentNode->leftChild->g_n + currentNode->leftChild->h_n;
+
+        nodes_queue.push(currentNode->leftChild);
+    }
+
+    
+    if(currentNode->rightChild != 0){
+        currentNode->rightChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->rightChild->h_n = misplaceTile_h(currentNode->rightChild, goalGrid);
+        currentNode->rightChild->f_n = currentNode->rightChild->g_n + currentNode->rightChild->h_n;
+
+        nodes_queue.push(currentNode->rightChild);
+    }
+
+    return nodes_queue;
+}
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+//expand and push to priority queue after calculating costs
+
+priority_queue<State*, vector<State*>, myComparator> missingTileQueue(State* currentNode, priority_queue<State*, vector<State*>, myComparator> nodes_queue, vector <vector<int> > goalGrid) {
+    currentNode = moveUp_State(currentNode);
+    currentNode = moveDown_State(currentNode);
+    currentNode = moveLeft_State(currentNode);
+    currentNode = moveRight_State(currentNode);
+
+    //calculate f_n before pushing each child state in queue
+    //f_n = g_n + h_n --> need to incremement g_n by one, h_n get from helper function
+    cout << "CURRENT GN OKAY: " << currentNode->g_n << endl;
+    if(currentNode->upChild != 0){
+        //currentNode->upChild->g_n = currentNode->g_n;
+        //currentNode->upChild->g_n += 1;
+        //currentNode->upChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->upChild->h_n = misplaceTile_h(currentNode->upChild, goalGrid);
+        currentNode->upChild->f_n = currentNode->upChild->h_n;
+        //currentNode->upChild->f_n = currentNode->upChild->g_n + currentNode->upChild->h_n;
+
+        nodes_queue.push(currentNode->upChild);
+    }
+
+    
+    if(currentNode->downChild != 0){
+        //currentNode->downChild->g_n = currentNode->g_n;
+        //currentNode->downChild->g_n += 1;
+        //currentNode->downChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->downChild->h_n = misplaceTile_h(currentNode->downChild, goalGrid);
+        currentNode->downChild->f_n = currentNode->downChild->h_n;
+        //currentNode->downChild->f_n = currentNode->downChild->g_n + currentNode->downChild->h_n;
+        nodes_queue.push(currentNode->downChild);
+    }
+
+    
+    if(currentNode->leftChild != 0){
+        //currentNode->leftChild->g_n = currentNode->g_n;
+        //currentNode->leftChild->g_n += 1;
+        //currentNode->leftChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->leftChild->h_n = misplaceTile_h(currentNode->leftChild, goalGrid);
+        currentNode->leftChild->f_n = currentNode->leftChild->h_n;
+        //currentNode->leftChild->f_n = currentNode->leftChild->g_n + currentNode->leftChild->h_n;
+
+        nodes_queue.push(currentNode->leftChild);
+    }
+
+    
+    if(currentNode->rightChild != 0){
+        //currentNode->rightChild->g_n = currentNode->g_n;
+        //currentNode->rightChild->g_n += 1;
+        //currentNode->rightChild->g_n = 1 + currentNode->g_n; //update g(n)
+        currentNode->rightChild->h_n = misplaceTile_h(currentNode->rightChild, goalGrid);
+        currentNode->rightChild->f_n = currentNode->rightChild->h_n;
+        //currentNode->rightChild->f_n = currentNode->rightChild->g_n + currentNode->rightChild->h_n;
+
+        nodes_queue.push(currentNode->rightChild);
+    }
+
+    return nodes_queue;
+    
+}
+
+
+
 //expand to children part of general search
 /*first: get each child node from 4 movement functions
 second: check if each child is not null, if it is, then don't add to queue
@@ -167,21 +344,25 @@ queue<State*> queueChildren(State* currentNode, queue<State*> nodes_queue){
 
     
     if(currentNode->upChild != 0){
+        currentNode->upChild->g_n = 1 + currentNode->g_n;
         nodes_queue.push(currentNode->upChild);
     }
 
     
     if(currentNode->downChild != 0){
+        currentNode->downChild->g_n = 1 + currentNode->g_n;
         nodes_queue.push(currentNode->downChild);
     }
 
     
     if(currentNode->leftChild != 0){
+        currentNode->leftChild->g_n = 1 + currentNode->g_n;
         nodes_queue.push(currentNode->leftChild);
     }
 
     
     if(currentNode->rightChild != 0){
+        currentNode->rightChild->g_n = 1 + currentNode->g_n;
         nodes_queue.push(currentNode->rightChild);
     }
 
