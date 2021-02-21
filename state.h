@@ -28,6 +28,7 @@ class State {
 
         vector< vector<int> > getGrid() { return this->gridState; }
 
+
         
         //~State(); --> not sure if need destructor yet
 };

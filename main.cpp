@@ -21,6 +21,7 @@ int manhattan_h(State* stateNode, vector <vector<int> > goalGrid);
 int misplaceTile_h(State* stateNode, vector <vector<int> > goalGrid);
 queue<State*> missingTileQueue(State* currentNode, queue<State*> nodes_queue, vector <vector<int> > goalGrid);
 queue<State*> manhattanTileQueue(State* currentNode, queue<State*> nodes_queue, vector <vector<int> > goalGrid);
+
 /*
 bool operator<(const State& s1, const State& s2){
     cout << "HI OPERATOR" << endl;
@@ -66,44 +67,85 @@ int main() {
     goalGrid.push_back(grow_1);
     goalGrid.push_back(grow_2);
     goalGrid.push_back(grow_3);
-    cout << "Welcome to the 8-Puzzle Solver: " << endl;
+    cout << "Welcome to Kinjal Mugatwala's 8-Puzzle Solver. Type '1' to use a default puzzle or '2' to create your own: " << endl;
     //cout << "Type 1 to use a default puzzle, or 2 to enter your own puzzle" << endl;
-    
-    for(int i = 0; i < 9; i++) {
-        int val = 0;
-        cout << "Enter a number for your puzzle, please use 0 to represent a blank space: ";
-        cin >> val;
-        cout << endl;
-        if(i < 3) {
+    int decisionNum;
+    cin >> decisionNum;
+
+
+    if(decisionNum == 2) {
+        cout << "Enter your puzzle, using a 0 to represent the blank. Please only enter valid 8-puzzles." << endl;
+        cout << "Enter the first row: ";
+        for(int i = 0; i < 3; i++) {
+            int val = 0;
+            cin >> val;
             row_1.push_back(val);
-        } else if(i < 6){
-            row_2.push_back(val);
-        } else {
-            row_3.push_back(val);
         }
+        cout << endl;
+
+        cout << "Enter the second row: ";
+        for(int i = 0; i < 3; i++) {
+            int val = 0;
+            cin >> val;
+            row_2.push_back(val);
+        }
+
+        cout << endl;
+
+        cout << "Enter the third row: ";
+        for(int i = 0; i < 3; i++) {
+            int val = 0;
+            cin >> val;
+            row_3.push_back(val);
+
+        }
+
+        cout << endl;
+
+        initial_state.push_back(row_1);
+        initial_state.push_back(row_2);
+        initial_state.push_back(row_3);
+
+        
+
+    } else {
+        initial_state = goalGrid;
     }
 
-    initial_state.push_back(row_1);
-    initial_state.push_back(row_2);
-    initial_state.push_back(row_3);
+    
     
     displayGridState(initial_state);
 
-    State* initState = new State(initial_state);
+    //State* initState = new State(initial_state);
     //cout << initState->getGrid() << endl;
+    
+    State* initState = new State(initial_state);
     vector< vector<int> > temp = initState->getGrid();
+
+    cout << "Select an algorithm. Choose 1 for Uniform Cost Search, 2 for misplaced tile heuristic, 3 for manhattan heuristic. " << endl;
+    int algNum;
+    cin >> algNum;
+    State* solutionNode;
+    if(algNum == 1){
+        solutionNode = general_search(initState, goalGrid);
+    } else if(algNum == 2){
+        solutionNode = missingTile_search(initState, goalGrid);
+    } else {//algnum = 3
+        solutionNode = manhattan_search(initState, goalGrid);
+    }
+
 
     //State* solutionNode = general_search(initState, goalGrid);
     //initState->h_n = misplaceTile_h(initState, goalGrid);
     //cout << "GENERAL H: " << initState->h_n << endl;
     //State* solutionNode = missingTile_search(initState, goalGrid);
-    State* solutionNode = manhattan_search(initState, goalGrid);
+    //State* solutionNode = manhattan_search(initState, goalGrid);
     if(solutionNode->getGrid().size() < 3){
         cout << "FAILURE - NO SOLUTION" << endl;
     } else {
-        cout << "YAY - FOUND SOLUTION: " << endl;
+        cout << "GOAL STATE! " << endl;
         displayGridState(solutionNode->getGrid());
-        cout << "Final g_n: " << solutionNode->g_n << endl;
+        cout << "Solution Depth: " << solutionNode->g_n << endl;
     }
     
 
@@ -181,7 +223,7 @@ State* missingTile_search(State* initialState, vector <vector<int> > goalGrid) {
         }
         State* currentNode = nodes_queue.front(); //top is for priority queue
         displayGridState(currentNode->getGrid());
-        cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
+        //cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
         if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
             return currentNode;
         } else {
@@ -219,7 +261,7 @@ State* manhattan_search(State* initialState, vector <vector<int> > goalGrid) {
         }
         State* currentNode = nodes_queue.front(); //top is for priority queue
         displayGridState(currentNode->getGrid());
-        cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
+        //cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
         if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
             return currentNode;
         } else {
@@ -313,7 +355,7 @@ queue<State*> manhattanTileQueue(State* currentNode, queue<State*> nodes_queue, 
     }
 
     //push order of children onto nodes_queue
-    cout << "SORT ORDER: " << endl;
+    //cout << "SORT ORDER: " << endl;
     for(int i = 0; i < sortTemp.size(); i++){
         nodes_queue.push(sortTemp[i]);
         cout << sortTemp[i]->f_n << endl;
@@ -402,7 +444,7 @@ queue<State*> missingTileQueue(State* currentNode, queue<State*> nodes_queue, ve
     }
 
     //push order of children onto nodes_queue
-    cout << "SORT ORDER: " << endl;
+    //cout << "SORT ORDER: " << endl;
     for(int i = 0; i < sortTemp.size(); i++){
         nodes_queue.push(sortTemp[i]);
         cout << sortTemp[i]->f_n << endl;
@@ -526,8 +568,9 @@ State* moveUp_State(State* stateNode) {
 
     //cannot move up if 0 is on the top row (which is row = 0)
     if(ind[0] == 0) { //is on the top row, 0 can't move
-        cout << "CAN'T MOVE UP" << endl;
+        //cout << "CAN'T MOVE UP" << endl;
         //leave statenode's upchild as null in default because it can't move up
+        ;
     } else {
         //it can move up and so we can make a new grid and state object
         //use same grid from parameter and copy it over
@@ -559,7 +602,8 @@ State* moveDown_State(State* stateNode) {
 
     //cannot move down if 0 is on the bottom row (which is row = 2)
     if(ind[0] == 2) { //is on the bottom row, 0 can't move
-        cout << "CAN'T MOVE DOWN" << endl;
+        //cout << "CAN'T MOVE DOWN" << endl;
+        ;
         //leave statenode's downchild as null in default because it can't move down
     } else {
         //it can move down and so we can make a new grid and state object
@@ -590,7 +634,8 @@ State* moveLeft_State(State* stateNode) {
 
     //cannot move left if 0 is on the first column (col = 0)
     if(ind[1] == 0) { //is on the first col, 0 can't move
-        cout << "CAN'T MOVE LEFT" << endl;
+        //cout << "CAN'T MOVE LEFT" << endl;
+        ;
         //leave statenode's leftchild as null in default because it can't move left
     } else {
         //it can move left and so we can make a new grid and state object
@@ -621,7 +666,8 @@ State* moveRight_State(State* stateNode) {
 
     //cannot move right if 0 is on the third column (col = 2)
     if(ind[1] == 2) { //is on the first col, 0 can't move
-        cout << "CAN'T MOVE RIGHT" << endl;
+        //cout << "CAN'T MOVE RIGHT" << endl;
+        ;
         //leave statenode's rightchild as null in default because it can't move right
     } else {
         //it can move right and so we can make a new grid and state object
@@ -657,3 +703,5 @@ bool meetGoalState(State* stateNode, vector <vector<int> > goalGrid) {
 
 
 }
+
+
