@@ -134,19 +134,14 @@ int main() {
         solutionNode = manhattan_search(initState, goalGrid);
     }
 
-
-    //State* solutionNode = general_search(initState, goalGrid);
-    //initState->h_n = misplaceTile_h(initState, goalGrid);
-    //cout << "GENERAL H: " << initState->h_n << endl;
-    //State* solutionNode = missingTile_search(initState, goalGrid);
-    //State* solutionNode = manhattan_search(initState, goalGrid);
+    /*
     if(solutionNode->getGrid().size() < 3){
         cout << "FAILURE - NO SOLUTION" << endl;
     } else {
         cout << "GOAL STATE! " << endl;
         displayGridState(solutionNode->getGrid());
         cout << "Solution Depth: " << solutionNode->g_n << endl;
-    }
+    }*/
     
 
     return 0;
@@ -177,20 +172,32 @@ State* general_search(State* initialState, vector <vector<int> > goalGrid) {
     //following project guideline pseudocode
     queue <State*> nodes_queue;
     nodes_queue.push(initialState); //add initial state of puzzle
+    int maxsize = 0;
     string str = "in progress";
+    int expandedNodes = 0;
     do{
         if(nodes_queue.empty()){ //failure because queue is empty, no solution found
             string str = "failure";
             break; //leave the do while loop
         }
         State* currentNode = nodes_queue.front();
+        expandedNodes += 1;
+        if(nodes_queue.size() > maxsize){
+            maxsize = nodes_queue.size();
+        }
+
         displayGridState(currentNode->getGrid());
 
         if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
+            cout << "GOAL STATE!" << endl;
+            cout << "number of nodes expanded: " << expandedNodes << endl;
+            cout << "max queue size: " << maxsize << endl;
+            cout << "solution depth: " << currentNode->g_n << endl;
             return currentNode;
         } else {
             //nodes_queue = queuefunction(get its children by moving & put it in queue)
             nodes_queue = queueChildren(currentNode, nodes_queue);
+            
             nodes_queue.pop();
         }
 
@@ -215,23 +222,30 @@ State* missingTile_search(State* initialState, vector <vector<int> > goalGrid) {
     //priority_queue<State*> nodes_queue;
     //priority_queue<State*, vector<State*>, myComparator> nodes_queue;
     nodes_queue.push(initialState); //add initial state of puzzle
-    
+    int expandedNodes = 0;
+    int maxsize = 0;
     do{
         if(nodes_queue.empty()){ //failure because queue is empty, no solution found
             string str = "failure";
             break; //leave the do while loop
         }
         State* currentNode = nodes_queue.front(); //top is for priority queue
+        expandedNodes += 1;
+        if(nodes_queue.size() > maxsize){
+            maxsize = nodes_queue.size();
+        }
         displayGridState(currentNode->getGrid());
-        //cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
+        cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
         if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
+            cout << "GOAL STATE!" << endl;
+            cout << "number of nodes expanded: " << expandedNodes << endl;
+            cout << "max queue size: " << maxsize << endl;
+            cout << "solution depth: " << currentNode->g_n << endl;
             return currentNode;
         } else {
             //nodes_queue = queuefunction(get its children by moving & put it in queue)
-            //nodes_queue = missingTileQueue(currentNode, nodes_queue, goalGrid);
-            //nodes_queue = tempFunction(currentNode, nodes_queue, goalGrid);
             nodes_queue = missingTileQueue(currentNode, nodes_queue, goalGrid);
-
+            
             nodes_queue.pop();
         }
 
@@ -253,20 +267,29 @@ State* manhattan_search(State* initialState, vector <vector<int> > goalGrid) {
     //priority_queue<State*> nodes_queue;
     //priority_queue<State*, vector<State*>, myComparator> nodes_queue;
     nodes_queue.push(initialState); //add initial state of puzzle
-    
+    int expandedNodes = 0;
+    int maxsize = 0;
     do{
         if(nodes_queue.empty()){ //failure because queue is empty, no solution found
             string str = "failure";
             break; //leave the do while loop
         }
         State* currentNode = nodes_queue.front(); //top is for priority queue
+        expandedNodes += 1;
+        if(nodes_queue.size() > maxsize){
+            maxsize = nodes_queue.size();
+        }
         displayGridState(currentNode->getGrid());
-        //cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
+        cout << "CURRENT g_n: " << currentNode->g_n << " CURRENT h_n: " << currentNode->h_n << " CURRENT f_n: " << currentNode->f_n << endl;
         if(meetGoalState(currentNode, goalGrid) == true) { //check if currentnode is the answer
+            cout << "GOAL STATE!" << endl;
+            cout << "number of nodes expanded: " << expandedNodes << endl;
+            cout << "max queue size: " << maxsize << endl;
+            cout << "solution depth: " << currentNode->g_n << endl;
             return currentNode;
         } else {
             nodes_queue = manhattanTileQueue(currentNode, nodes_queue, goalGrid);
-
+            //expandedNodes += 1;
             nodes_queue.pop();
         }
 
@@ -358,7 +381,7 @@ queue<State*> manhattanTileQueue(State* currentNode, queue<State*> nodes_queue, 
     //cout << "SORT ORDER: " << endl;
     for(int i = 0; i < sortTemp.size(); i++){
         nodes_queue.push(sortTemp[i]);
-        cout << sortTemp[i]->f_n << endl;
+        //cout << sortTemp[i]->f_n << endl;
     }
 
 
@@ -447,7 +470,7 @@ queue<State*> missingTileQueue(State* currentNode, queue<State*> nodes_queue, ve
     //cout << "SORT ORDER: " << endl;
     for(int i = 0; i < sortTemp.size(); i++){
         nodes_queue.push(sortTemp[i]);
-        cout << sortTemp[i]->f_n << endl;
+        //cout << sortTemp[i]->f_n << endl;
     }
 
 
@@ -507,13 +530,15 @@ int manhattan_h(State* stateNode, vector <vector<int> > goalGrid) {
         for(int j = 0; j < goalGrid[i].size(); j++){
             sum = 0;
             //need to find value's position in goal
-            if(stateGrid[i][j] == goalGrid[i][j]){
-                //num is in the right spot, no cost here
-                continue;
-            } else {
-                goalPos = getNumPosition(goalGrid, stateGrid[i][j]);
-                sum = abs(i - goalPos[0]) + abs(j - goalPos[1]);
-                counter += sum;
+            if(stateGrid[i][j] != 0){
+                if(stateGrid[i][j] == goalGrid[i][j]){
+                    //num is in the right spot, no cost here
+                    continue;
+                } else {
+                    goalPos = getNumPosition(goalGrid, stateGrid[i][j]);
+                    sum = abs(i - goalPos[0]) + abs(j - goalPos[1]);
+                    counter += sum;
+                }
             }
         }
     }
@@ -527,9 +552,13 @@ int misplaceTile_h(State* stateNode, vector <vector<int> > goalGrid) {
     vector <vector<int> > stateGrid = stateNode->getGrid();
     for(int i = 0; i < goalGrid.size(); i++){
         for(int j = 0; j < goalGrid[i].size(); j++){
-            if(stateGrid[i][j] != goalGrid[i][j]){ //misplaced tile
-                counter += 1;
+            
+            if(stateGrid[i][j] != 0){
+                if(stateGrid[i][j] != goalGrid[i][j]){ //misplaced tile
+                    counter += 1;
+                }
             }
+            
         }
     }
 
